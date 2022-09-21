@@ -1,0 +1,129 @@
+chop	0.1
+pour	0.1
+mix	0.1
+crack	0.1
+beat	0.1
+dip	0.1
+turn on	0.1
+pick-and-place	0.1
+fry	0.1
+sprinkle	0.1
+scoop and pour	0.1
+spread	0.1
+flip	0.1
+cover	0.1
+cook	0.1
+uncover	0.1
+scoop	0.1
+measure	0.1
+pour and spread	0.1
+stir	0.1
+cook and stir	0.1
+simmer	0.1
+cut	0.1
+slice	0.1
+insert	0.1
+squeeze	0.1
+attach	0.1
+blend	0.1
+turn off	0.1
+detach	0.1
+stir and strain	0.1
+spray	0.1
+put inside	0.1
+bake	0.1
+flip and stack	0.1
+sift	0.1
+roll	0.1
+preheat	0.1
+whisk	0.1
+fold	0.1
+throw away	0.1
+fill	0.1
+grind	0.1
+grate	0.1
+pour and blend	0.1
+scrape	0.1
+dice	0.1
+pour and scrape	0.1
+unwrap	0.1
+peel	0.1
+cut open	0.1
+remove	0.1
+cut with slits	0.1
+brush	0.1
+shape	0.1
+wash	0.1
+boil	0.1
+pour and strain	0.1
+chill	0.1
+open	0.1
+close	0.1
+shake	0.1
+core	0.1
+rinse	0.1
+grind and sprinkle	0.1
+light	0.1
+heat	0.1
+drip	0.1
+rip open	0.1
+wrap	0.1
+skim	0.1
+cut off ends	0.1
+break apart	0.1
+mix and pour	0.1
+scrape and pour	0.1
+take apart	0.1
+scoop and spread	0.1
+tear and place	0.1
+add	0.1
+place	0.1
+scoop and place	0.1
+tear apart	0.1
+squeeze and scrape	0.1
+mince	0.1
+coat	0.1
+freeze	0.1
+take out	0.1
+brew	0.1
+melt	0.1
+cook and shake	0.1
+cook and spread	0.1
+knead	0.1
+tear and cover	0.1
+ferment	0.1
+press	0.1
+divide	0.1
+toast	0.1
+tear	0.1
+break	0.1
+drain	0.1
+poke	0.1
+rub	0.1
+rim	0.1
+soak	0.1
+tuck ends	0.1
+broil	0.1
+flip and place	0.1
+pour and stir	0.1
+mash	0.1
+place and spread	0.1
+combine	0.1
+make slits	0.1
+cut off skin	0.1
+pull apart	0.1
+defrost	0.1
+grind and pour	0.1
+cut in half	0.1
+cool down	0.1
+fold and pinch	0.1
+fry and flip	0.1
+pour and mix	0.1
+mix and mash	0.1
+press and cook	0.1
+shave	0.1
+sit	0.1
+cook and flip	0.1
+roll and shape	0.1
+stir and melt	0.1
+stir and fry	0.1
