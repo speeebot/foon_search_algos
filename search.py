@@ -44,7 +44,6 @@ def search_BFS(kitchen_items=[], goal_node=None):
         current_item_index = items_to_search.pop(0)  # pop the first element
         if current_item_index in items_already_searched:
             continue
-
         else:
             items_already_searched.append(current_item_index)
 
@@ -58,13 +57,79 @@ def search_BFS(kitchen_items=[], goal_node=None):
             # this is the part where you should use heuristic for Greedy Best-First search
             selected_candidate_idx = candidate_units[0]
 
-            # if an fu is already taken, do not process it again
+            # if a functional unit is already taken, do not process it again
             if selected_candidate_idx in reference_task_tree:
                 continue
 
             reference_task_tree.append(selected_candidate_idx)
 
-            # all input of the selected FU need to be explored
+            # all input of the selected functional unit need to be explored
+            for node in foon_functional_units[
+                    selected_candidate_idx].input_nodes:
+                node_idx = node.id
+                if node_idx not in items_to_search:
+
+                    # if in the input nodes, we have bowl contains {onion} and onion, chopped, in [bowl]
+                    # explore only onion, chopped, in bowl
+                    flag = True
+                    if node.label in utensils and len(node.ingredients) == 1:
+                        for node2 in foon_functional_units[
+                                selected_candidate_idx].input_nodes:
+                            if node2.label == node.ingredients[
+                                    0] and node2.container == node.label:
+
+                                flag = False
+                                break
+                    if flag:
+                        items_to_search.append(node_idx)
+
+    # reverse the task tree
+    reference_task_tree.reverse()
+
+    # create a list of functional units from the indices of reference_task_tree
+    task_tree_units = []
+    for i in reference_task_tree:
+        task_tree_units.append(foon_functional_units[i])
+
+    return task_tree_units
+
+def search_IDS(kitchen_items=[], goal_node=None):
+    # list of indices of functional units
+    reference_task_tree = []
+
+    # list of object indices that need to be searched
+    items_to_search = []
+
+    # find the index of the goal node in object node list
+    items_to_search.append(goal_node.id)
+
+    # list of item already explored
+    items_already_searched = []
+
+    while len(items_to_search) > 0:
+        current_item_index = items_to_search.pop(0)  # pop the first element
+        if current_item_index in items_already_searched:
+            continue
+        else:
+            items_already_searched.append(current_item_index)
+
+        current_item = foon_object_nodes[current_item_index]
+
+        if not check_if_exist_in_kitchen(kitchen_items, current_item):
+
+            candidate_units = foon_object_to_FU_map[current_item_index]
+
+            # selecting the first path
+            # this is the part where you should use heuristic for Greedy Best-First search
+            selected_candidate_idx = candidate_units[0]
+
+            # if a functional unit is already taken, do not process it again
+            if selected_candidate_idx in reference_task_tree:
+                continue
+
+            reference_task_tree.append(selected_candidate_idx)
+
+            # all input of the selected functional unit need to be explored
             for node in foon_functional_units[
                     selected_candidate_idx].input_nodes:
                 node_idx = node.id
@@ -92,8 +157,12 @@ def search_BFS(kitchen_items=[], goal_node=None):
     for i in reference_task_tree:
         task_tree_units.append(foon_functional_units[i])
 
-    return task_tree_units
+    return task_tree_units 
 
+
+#https://ai-master.gitbooks.io/heuristic-search/content/what-is-greedy-best-first-search.html
+def search_BFS(kitchen_items=[], goal_node=None):
+    
 
 def save_paths_to_file(task_tree, path):
 
@@ -148,7 +217,10 @@ if __name__ == '__main__':
 
         for object in foon_object_nodes:
             if object.check_object_equal(node_object):
-                output_task_tree = search_BFS(kitchen_items, object)
+                #output_task_tree = search_BFS(kitchen_items, object)
+                #save_paths_to_file(output_task_tree,
+                #                   'output_BFS_{}.txt'.format(node["label"]))
+                output_task_tree = search_IDS(kitchen_items, object)
                 save_paths_to_file(output_task_tree,
-                                   'output_BFS_{}.txt'.format(node["label"]))
+                                   'output_IDS_{}.txt'.format(node["label"]))
                 break
