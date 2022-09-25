@@ -136,7 +136,7 @@ def search_IDS(kitchen_items=[], goal_node=None):
             for node in foon_functional_units[selected_candidate_idx].input_nodes:
                 node_idx = node.id
                 if node_idx not in items_to_search:
-                #----------------------------This whole bit of code handles what is described in the next comment---------
+                #----------------------------This bit of code handles what is described in the next comment---------
                     # if in the input nodes, we have bowl contains {onion} and onion, chopped, in [bowl]
                     # explore only onion, chopped, in bowl
                     flag = True
@@ -164,8 +164,14 @@ def IDS(kitchen_items=[], goal_node=None):
     # list of indices of functional units
     reference_task_tree = []
 
+    found = False
+    depth = 0
+
     # call depth first search starting from the goal node
-    reference_task_tree = DFS(goal_node.id)
+    while not found:
+        items_already_searched = set()
+        depth += 1
+        reference_task_tree, found = DFS(0, depth, goal_node.id, items_already_searched, kitchen_items)
 
     # reverse the task tree
     reference_task_tree.reverse()
@@ -177,9 +183,21 @@ def IDS(kitchen_items=[], goal_node=None):
 
     return task_tree_units 
 
-def DFS(current_item_index, items_already_searched=[], reference_task_tree=[]):
+def DFS(depth, maxDepth, current_item_index, items_already_searched, kitchen_items=[], reference_task_tree=None):
+
+    found = False
+
     if current_item_index not in items_already_searched:
-        items_already_searched.append(current_item_index)
+        items_already_searched.add(current_item_index)
+    else:
+        return reference_task_tree, found
+
+    if reference_task_tree is None:
+        reference_task_tree = []
+
+    #IDS check for maxDepth reached
+    #if depth > maxDepth:
+    #    return reference_task_tree, found
 
     # grab nodes of current foon object
     current_item = foon_object_nodes[current_item_index] 
@@ -195,17 +213,25 @@ def DFS(current_item_index, items_already_searched=[], reference_task_tree=[]):
         selected_candidate_idx = candidate_units[0]
         
         # if a functional unit is already taken, do not process it again
-        if selected_candidate_idx in reference_task_tree:
-            return reference_task_tree
+        if selected_candidate_idx in reference_task_tree and len(reference_task_tree) > 0:
+            return reference_task_tree, found
 
         reference_task_tree.append(selected_candidate_idx)
 
         # explore all input nodes of the selected functional unit
         for node in foon_functional_units[selected_candidate_idx].input_nodes:
             node_index = node.id
-            reference_task_tree = DFS(node_index, items_already_searched, reference_task_tree)
+            flag = True
+            if node.label in utensils and len(node.ingredients) == 1:
+                for node2 in foon_functional_units[selected_candidate_idx].input_nodes:
+                    if node2.label == node.ingredients[0] and node2.container == node.label:
+                        flag = False
+                        break
+            if flag: 
+                reference_task_tree, found = DFS(depth+1, maxDepth, node_index, items_already_searched, kitchen_items, reference_task_tree)
+                found = True
 
-    return reference_task_tree
+    return reference_task_tree, found
 
 
 #https://ai-master.gitbooks.io/heuristic-search/content/what-is-greedy-best-first-search.html
