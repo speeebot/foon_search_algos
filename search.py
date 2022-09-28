@@ -64,24 +64,19 @@ def search_BFS(kitchen_items=[], goal_node=None):
             reference_task_tree.append(selected_candidate_idx)
 
             # all input of the selected functional unit need to be explored
-            for node in foon_functional_units[
-                    selected_candidate_idx].input_nodes:
+            for node in foon_functional_units[selected_candidate_idx].input_nodes:
                 node_idx = node.id
-                if node_idx not in items_to_search:
-
-                    # if in the input nodes, we have bowl contains {onion} and onion, chopped, in [bowl]
-                    # explore only onion, chopped, in bowl
-                    flag = True
-                    if node.label in utensils and len(node.ingredients) == 1:
-                        for node2 in foon_functional_units[
-                                selected_candidate_idx].input_nodes:
-                            if node2.label == node.ingredients[
-                                    0] and node2.container == node.label:
-
-                                flag = False
-                                break
-                    if flag:
-                        items_to_search.append(node_idx)
+                #if node_idx not in items_already_searched:
+                # if in the input nodes, we have bowl contains {onion} and onion, chopped, in [bowl]
+                # explore only onion, chopped, in bowl
+                flag = True
+                if node.label in utensils and len(node.ingredients) == 1:
+                    for node2 in foon_functional_units[selected_candidate_idx].input_nodes:
+                        if node2.label == node.ingredients[0] and node2.container == node.label:
+                            flag = False
+                            break
+                if flag:
+                    items_to_search.append(node_idx)
 
     # reverse the task tree
     reference_task_tree.reverse()
@@ -165,77 +160,81 @@ def IDS(kitchen_items=[], goal_node=None):
     reference_task_tree = []
 
     found = False
-    depth = 0
+    max_depth = 1
 
     # call depth first search starting from the goal node
     while not found:
-        items_already_searched = set()
-        depth += 1
-        reference_task_tree, found = DFS(0, depth, goal_node.id, items_already_searched, kitchen_items)
+        task_tree_units, found = DFS(0, max_depth, goal_node, kitchen_items)
+        max_depth += 1
+        print("not found")
+    print("found")
+
+    return task_tree_units 
+
+def DFS(depth, max_depth, goal_node=None, kitchen_items=[]):
+
+    reference_task_tree = []
+    stack = [goal_node.id]
+    items_already_searched = set()
+
+    while len(stack) > 0:
+        # pop the last element
+        current_item_index = stack.pop()
+
+        if current_item_index in items_already_searched:
+            continue
+        else:
+            items_already_searched.add(current_item_index)
+        
+        if depth > max_depth:
+            print("depth > max_depth")
+            return reference_task_tree, False
+
+        # grab nodes of current foon object
+        current_item = foon_object_nodes[current_item_index] 
+
+        # for each node, check if the ingredient already exists in the kitchen
+        if not check_if_exist_in_kitchen(kitchen_items, current_item): 
+            # NOTE: object_to_FU_map creates a mapping between output node to functional units
+            # in this map, key = object index in object_nodes,
+            # value = index of all FU where this object is an output
+            candidate_units = foon_object_to_FU_map[current_item_index]
+
+            # select the first path
+            selected_candidate_idx = candidate_units[0]
+            
+            # if a functional unit is already taken, do not process it again
+            if selected_candidate_idx in reference_task_tree:
+                continue
+
+            reference_task_tree.append(selected_candidate_idx)
+
+            # explore all input nodes of the selected functional unit
+            for node in foon_functional_units[selected_candidate_idx].input_nodes:
+                node_index = node.id
+                flag = True
+                if node.label in utensils and len(node.ingredients) == 1:
+                    for node2 in foon_functional_units[selected_candidate_idx].input_nodes:
+                        if node2.label == node.ingredients[0] and node2.container == node.label:
+                            flag = False
+                            break
+                if flag: 
+                    stack.append(node_index)
+                    depth += 1
 
     # reverse the task tree
     reference_task_tree.reverse()
 
-    # create a list of functional unit from the indices of reference_task_tree
+    # create a list of functional units from the indices of reference_task_tree
     task_tree_units = []
     for i in reference_task_tree:
         task_tree_units.append(foon_functional_units[i])
 
-    return task_tree_units 
-
-def DFS(depth, maxDepth, current_item_index, items_already_searched, kitchen_items=[], reference_task_tree=None):
-
-    found = False
-
-    if current_item_index not in items_already_searched:
-        items_already_searched.add(current_item_index)
-    else:
-        return reference_task_tree, found
-
-    if reference_task_tree is None:
-        reference_task_tree = []
-
-    #IDS check for maxDepth reached
-    #if depth > maxDepth:
-    #    return reference_task_tree, found
-
-    # grab nodes of current foon object
-    current_item = foon_object_nodes[current_item_index] 
-
-    # for each node, check if the ingredient already exists in the kitchen
-    if not check_if_exist_in_kitchen(kitchen_items, current_item): 
-        # NOTE: object_to_FU_map creates a mapping between output node to functional units
-        # in this map, key = object index in object_nodes,
-        # value = index of all FU where this object is an output
-        candidate_units = foon_object_to_FU_map[current_item_index]
-
-        # select the first path
-        selected_candidate_idx = candidate_units[0]
-        
-        # if a functional unit is already taken, do not process it again
-        if selected_candidate_idx in reference_task_tree and len(reference_task_tree) > 0:
-            return reference_task_tree, found
-
-        reference_task_tree.append(selected_candidate_idx)
-
-        # explore all input nodes of the selected functional unit
-        for node in foon_functional_units[selected_candidate_idx].input_nodes:
-            node_index = node.id
-            flag = True
-            if node.label in utensils and len(node.ingredients) == 1:
-                for node2 in foon_functional_units[selected_candidate_idx].input_nodes:
-                    if node2.label == node.ingredients[0] and node2.container == node.label:
-                        flag = False
-                        break
-            if flag: 
-                reference_task_tree, found = DFS(depth+1, maxDepth, node_index, items_already_searched, kitchen_items, reference_task_tree)
-                found = True
-
-    return reference_task_tree, found
+    return task_tree_units, True
 
 
 #https://ai-master.gitbooks.io/heuristic-search/content/what-is-greedy-best-first-search.html
-def search_best_first(kitchen_items=[], goal_node=None):
+def search_heuristic1(kitchen_items=[], goal_node=None):
     # list of indices of functional units
     reference_task_tree = []
 
