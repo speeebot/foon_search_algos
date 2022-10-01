@@ -63,6 +63,8 @@ def search_BFS(kitchen_items=[], goal_node=None):
 
             reference_task_tree.append(selected_candidate_idx)
 
+            print("-------------------------------------------------------------------------------------------------")
+            print(foon_functional_units[selected_candidate_idx].get_FU_as_text())
             # all input of the selected functional unit need to be explored
             for node in foon_functional_units[selected_candidate_idx].input_nodes:
                 node_idx = node.id
@@ -70,10 +72,14 @@ def search_BFS(kitchen_items=[], goal_node=None):
                 # if in the input nodes, we have bowl contains {onion} and onion, chopped, in [bowl]
                 # explore only onion, chopped, in bowl
                 flag = True
+                print(f"{node.label} ingredients: {node.ingredients}")
                 if node.label in utensils and len(node.ingredients) == 1:
+                    #print(f"object: {node.label}")
+                    print(f"contains: {node.ingredients}")
                     for node2 in foon_functional_units[selected_candidate_idx].input_nodes:
                         if node2.label == node.ingredients[0] and node2.container == node.label:
                             flag = False
+                            print(f"INDGREDIENT OBJECTS: {node2.label}")
                             break
                 if flag:
                     items_to_search.append(node_idx)
@@ -251,14 +257,12 @@ def find_best_success_rate_candidate(candidate_units):
 
     candidate_motions = {}
     
-    #print(f"# of candidate units: {len(candidate_units)}")
     for unit in candidate_units:
         candidate_motion = foon_functional_units[unit].motion_node
+        print(f"{candidate_motion}: {motions[candidate_motion]}")
         candidate_motions[candidate_motion] = motions[candidate_motion]
 
     best_candidate = max(candidate_motions, key=candidate_motions.get)
-
-    #print(f"selected candidate: {best_candidate}")
         
     for unit in candidate_units:
         if foon_functional_units[unit].motion_node == best_candidate:
@@ -296,7 +300,6 @@ def search_heuristic1(kitchen_items=[], goal_node=None):
 
             # selecting the first path
             # this is the part where you should use heuristic for Greedy Best-First search
-            #selected_candidate_idx = candidate_units[0]
             selected_candidate_idx = find_best_success_rate_candidate(candidate_units)
             # If we find that there are more than one way to get the egg mixture, you can choose the first way you
             # discover in case of iterative deepening. But, when you are using heuristic, you need to check all the 
@@ -316,9 +319,12 @@ def search_heuristic1(kitchen_items=[], goal_node=None):
                     # explore only onion, chopped, in bowl
                     flag = True
                     if node.label in utensils and len(node.ingredients) == 1:
+                        print(f"object: {node.label}")
+                        print(f"contains: {node.ingredients}")
                         for node2 in foon_functional_units[selected_candidate_idx].input_nodes:
                             if node2.label == node.ingredients[0] and node2.container == node.label:
                                 flag = False
+                                print(f"ingredient objects: {node2.label}")
                                 break
                     if flag:
                         items_to_search.append(node_idx)
@@ -335,40 +341,29 @@ def search_heuristic1(kitchen_items=[], goal_node=None):
 
 #count input objects of candidate unit, including object ingredients
 def count_input_objects(candidate_unit):
-
     count = 0
+    input_objects = []
 
     for node in foon_functional_units[candidate_unit].input_nodes:
-        flag = True
-        if node.label in utensils and len(node.ingredients) == 1:
-            for node2 in foon_functional_units[candidate_unit].input_nodes:
-                if node2.label == node.ingredients[0] and node2.container == node.label:
-                    flag = False
-                    break
-        if flag:
-            count += len(node.ingredients)
-
-        if node.label is not None:
+        print(node.get_ingredients_as_text())
+        for ingredient in node.ingredients:
             count += 1
+            input_objects.append(ingredient)
+        if node.label not in input_objects:
+            count += 1
+            input_objects.append(node.label)
 
     return count
-        
-        
-
 
 #returns functional_unit index for functional unit that contains the least input objects
 #input objects includes object ingredients
 def find_least_input_objects_candidate(candidate_units):
-
     candidate_input_dict = {}
     
-    #print(f"# of candidate units: {len(candidate_units)}")
     for unit in candidate_units:
         candidate_input_dict[unit] = count_input_objects(unit)
 
     best_candidate = min(candidate_input_dict, key=candidate_input_dict.get)
-
-    #print(f"selected candidate: {best_candidate}")
 
     return best_candidate
 
