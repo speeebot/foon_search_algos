@@ -63,26 +63,24 @@ def search_BFS(kitchen_items=[], goal_node=None):
 
             reference_task_tree.append(selected_candidate_idx)
 
-            print("-------------------------------------------------------------------------------------------------")
-            print(foon_functional_units[selected_candidate_idx].get_FU_as_text())
             # all input of the selected functional unit need to be explored
             for node in foon_functional_units[selected_candidate_idx].input_nodes:
                 node_idx = node.id
-                #if node_idx not in items_already_searched:
+                if node_idx not in items_to_search:
                 # if in the input nodes, we have bowl contains {onion} and onion, chopped, in [bowl]
                 # explore only onion, chopped, in bowl
-                flag = True
-                print(f"{node.label} ingredients: {node.ingredients}")
-                if node.label in utensils and len(node.ingredients) == 1:
-                    #print(f"object: {node.label}")
-                    print(f"contains: {node.ingredients}")
-                    for node2 in foon_functional_units[selected_candidate_idx].input_nodes:
-                        if node2.label == node.ingredients[0] and node2.container == node.label:
-                            flag = False
-                            print(f"INDGREDIENT OBJECTS: {node2.label}")
-                            break
-                if flag:
-                    items_to_search.append(node_idx)
+                    flag = True
+                    #print(f"{node.label} ingredients: {node.ingredients}")
+                    if node.label in utensils and len(node.ingredients) == 1:
+                        #print(f"object: {node.label}")
+                        #print(f"contains: {node.ingredients}")
+                        for node2 in foon_functional_units[selected_candidate_idx].input_nodes:
+                            if node2.label == node.ingredients[0] and node2.container == node.label:
+                                flag = False
+                                #print(f"INDGREDIENT OBJECTS: {node2.label}")
+                                break
+                    if flag:
+                        items_to_search.append(node_idx)
 
     # reverse the task tree
     reference_task_tree.reverse()
@@ -169,55 +167,62 @@ def IDS(kitchen_items=[], goal_node=None):
     max_depth = 1
 
     # call depth first search starting from the goal node
-    while not found:
-        task_tree_units, found = DFS(0, max_depth, goal_node, kitchen_items)
-        max_depth += 1
-        print("not found")
-    print("found")
+    #while not found:
+    reference_task_tree, found = DFS(goal_node.id, max_depth, 0, kitchen_items)
+    #    max_depth += 1
+
+    # reverse the task tree
+    reference_task_tree.reverse()
+
+    # create a list of functional unit from the indices of reference_task_tree
+    task_tree_units = []
+    for i in reference_task_tree:
+        task_tree_units.append(foon_functional_units[i])
 
     return task_tree_units 
 
-def DFS(depth, max_depth, goal_node=None, kitchen_items=[]):
+def DFS(current_item_index, max_depth, depth, kitchen_items=[], items_already_searched=[], reference_task_tree=None):
+    #print(f"#max_depth: {max_depth}  depth: {depth}")
+    print("====================================================================")
+    found = False
 
-    reference_task_tree = []
-    stack = [goal_node.id]
-    items_already_searched = set()
+    if current_item_index not in items_already_searched:
+        items_already_searched.append(current_item_index)
 
-    while len(stack) > 0:
-        # pop the last element
-        current_item_index = stack.pop()
+    if reference_task_tree is None:
+        reference_task_tree = []
 
-        if current_item_index in items_already_searched:
-            continue
-        else:
-            items_already_searched.add(current_item_index)
+    #IDS check for maxDepth reached
+    #if depth > max_depth:
+    #    print("#not found: depth > max_depth")
+    #    return reference_task_tree, found
+
+    # grab nodes of current foon object
+    current_item = foon_object_nodes[current_item_index] 
+
+    # for each node, check if the ingredient already exists in the kitchen
+    if not check_if_exist_in_kitchen(kitchen_items, current_item): 
+        # NOTE: object_to_FU_map creates a mapping between output node to functional units
+        # in this map, key = object index in object_nodes,
+        # value = index of all FU where this object is an output
+        candidate_units = foon_object_to_FU_map[current_item_index]
+
+        # select the first path
+        selected_candidate_idx = candidate_units[0]
         
-        if depth > max_depth:
-            print("depth > max_depth")
-            return reference_task_tree, False
+        # if a functional unit is already taken, do not process it again
+        if selected_candidate_idx in reference_task_tree and len(reference_task_tree) > 0:
+            #reference_task_tree.reverse()
+            print("#not found: unit already taken")
+            return reference_task_tree, found
 
-        # grab nodes of current foon object
-        current_item = foon_object_nodes[current_item_index] 
+        reference_task_tree.append(selected_candidate_idx)
+        print(f"#appended: \n{foon_functional_units[selected_candidate_idx].get_FU_as_text()}")
 
-        # for each node, check if the ingredient already exists in the kitchen
-        if not check_if_exist_in_kitchen(kitchen_items, current_item): 
-            # NOTE: object_to_FU_map creates a mapping between output node to functional units
-            # in this map, key = object index in object_nodes,
-            # value = index of all FU where this object is an output
-            candidate_units = foon_object_to_FU_map[current_item_index]
-
-            # select the first path
-            selected_candidate_idx = candidate_units[0]
-            
-            # if a functional unit is already taken, do not process it again
-            if selected_candidate_idx in reference_task_tree:
-                continue
-
-            reference_task_tree.append(selected_candidate_idx)
-
-            # explore all input nodes of the selected functional unit
-            for node in foon_functional_units[selected_candidate_idx].input_nodes:
-                node_index = node.id
+        # explore all input nodes of the selected functional unit
+        for node in foon_functional_units[selected_candidate_idx].input_nodes:
+            node_index = node.id
+            if node_index not in items_already_searched:
                 flag = True
                 if node.label in utensils and len(node.ingredients) == 1:
                     for node2 in foon_functional_units[selected_candidate_idx].input_nodes:
@@ -225,18 +230,14 @@ def DFS(depth, max_depth, goal_node=None, kitchen_items=[]):
                             flag = False
                             break
                 if flag: 
-                    stack.append(node_index)
-                    depth += 1
+                    #reference_task_tree.reverse()
+                    reference_task_tree, found = DFS(node_index, max_depth, depth+1, kitchen_items, items_already_searched, reference_task_tree)
+                    found = True
+            else:
+                print("NODE_INDEX ALREADY SEARCHED")
+    
 
-    # reverse the task tree
-    reference_task_tree.reverse()
-
-    # create a list of functional units from the indices of reference_task_tree
-    task_tree_units = []
-    for i in reference_task_tree:
-        task_tree_units.append(foon_functional_units[i])
-
-    return task_tree_units, True
+    return reference_task_tree, found
 
 #In case of heuristic 1, if you have multiple path with different motions, choose the
 #path that gives higher success rate of executing the motion successfully. For
@@ -259,7 +260,6 @@ def find_best_success_rate_candidate(candidate_units):
     
     for unit in candidate_units:
         candidate_motion = foon_functional_units[unit].motion_node
-        print(f"{candidate_motion}: {motions[candidate_motion]}")
         candidate_motions[candidate_motion] = motions[candidate_motion]
 
     best_candidate = max(candidate_motions, key=candidate_motions.get)
@@ -267,6 +267,17 @@ def find_best_success_rate_candidate(candidate_units):
     for unit in candidate_units:
         if foon_functional_units[unit].motion_node == best_candidate:
             best_unit = unit
+
+    '''print("==============================================================================================")
+    for unit in candidate_units:
+        print("---------------------------------------------------------")
+        print(foon_functional_units[unit].get_FU_as_text())
+        print(f"#{foon_functional_units[unit].motion_node}: {motions[foon_functional_units[unit].motion_node]}")
+        print("---------------------------------------------------------")
+
+    print("++++++++++++++++++++++++++++++++SELECTED UNIT++++++++++++++++++++++++++++++++++++++++")
+    print(foon_functional_units[best_unit].get_FU_as_text())
+    print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")'''
 
     return best_unit
 
@@ -301,6 +312,7 @@ def search_heuristic1(kitchen_items=[], goal_node=None):
             # selecting the first path
             # this is the part where you should use heuristic for Greedy Best-First search
             selected_candidate_idx = find_best_success_rate_candidate(candidate_units)
+            #selected_candidate_idx = candidate_units[0]
             # If we find that there are more than one way to get the egg mixture, you can choose the first way you
             # discover in case of iterative deepening. But, when you are using heuristic, you need to check all the 
             # candidate functional units and calculate the cost of the heuristic function. Then, you can decide which path to choose
@@ -319,12 +331,9 @@ def search_heuristic1(kitchen_items=[], goal_node=None):
                     # explore only onion, chopped, in bowl
                     flag = True
                     if node.label in utensils and len(node.ingredients) == 1:
-                        print(f"object: {node.label}")
-                        print(f"contains: {node.ingredients}")
                         for node2 in foon_functional_units[selected_candidate_idx].input_nodes:
                             if node2.label == node.ingredients[0] and node2.container == node.label:
                                 flag = False
-                                print(f"ingredient objects: {node2.label}")
                                 break
                     if flag:
                         items_to_search.append(node_idx)
@@ -345,7 +354,6 @@ def count_input_objects(candidate_unit):
     input_objects = []
 
     for node in foon_functional_units[candidate_unit].input_nodes:
-        print(node.get_ingredients_as_text())
         for ingredient in node.ingredients:
             count += 1
             input_objects.append(ingredient)
@@ -359,7 +367,7 @@ def count_input_objects(candidate_unit):
 #input objects includes object ingredients
 def find_least_input_objects_candidate(candidate_units):
     candidate_input_dict = {}
-    
+
     for unit in candidate_units:
         candidate_input_dict[unit] = count_input_objects(unit)
 
@@ -488,13 +496,13 @@ if __name__ == '__main__':
                 #output_task_tree = search_BFS(kitchen_items, object)
                 #save_paths_to_file(output_task_tree,
                 #                   'output_BFS_{}.txt'.format(node["label"]))
-                #output_task_tree = IDS(kitchen_items, object)
-                #save_paths_to_file(output_task_tree,
-                #                   'output_IDS_{}.txt'.format(node["label"]))
+                output_task_tree = IDS(kitchen_items, object)
+                save_paths_to_file(output_task_tree,
+                                   'output_IDS_{}.txt'.format(node["label"]))
                 #output_task_tree = search_heuristic1(kitchen_items, object)
                 #save_paths_to_file(output_task_tree,
                 #                   'output_heuristic1_{}.txt'.format(node["label"]))
-                output_task_tree = search_heuristic2(kitchen_items, object)
-                save_paths_to_file(output_task_tree,
-                                   'output_heuristic2_{}.txt'.format(node["label"]))
+                #output_task_tree = search_heuristic2(kitchen_items, object)
+                #save_paths_to_file(output_task_tree,
+                #                   'output_heuristic2_{}.txt'.format(node["label"]))
                 break
