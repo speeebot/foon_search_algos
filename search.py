@@ -1,6 +1,5 @@
 import pickle
 import json
-from collections import OrderedDict
 from FOON_class import Object
 
 # -----------------------------------------------------------------------------------------------------------------------------#
@@ -86,15 +85,16 @@ def search_BFS(kitchen_items=[], goal_node=None):
     return task_tree_units
 
 def search_IDS(kitchen_items=[], goal_node=None):
+
     # list of indices of functional units
     reference_task_tree = []
     depth = 0
     max_depth = 50
-    remaining = True
     
-    # call depth first search starting from the goal node
+    #iterative deepening
     while depth < max_depth:
-        remaining = DFS(depth, max_depth, goal_node.id, reference_task_tree, kitchen_items)
+        # call depth first search starting from the goal node
+        DFS(depth, max_depth, goal_node.id, reference_task_tree, kitchen_items)
         depth += 1
 
     # reverse the task tree
@@ -122,11 +122,7 @@ def DFS(depth, max_depth, current_item_index, reference_task_tree, kitchen_items
         selected_candidate_idx = candidate_units[0]
         
         if depth < 0: #reaches bound
-            for node in foon_functional_units[selected_candidate_idx].input_nodes:
-                if not check_if_exist_in_kitchen(kitchen_items, foon_object_nodes[node.id]):
-                    if selected_candidate_idx not in reference_task_tree:
-                        return True
-            return False
+            return
 
         if depth > 0:
             # explore all input nodes of the selected functional unit
@@ -139,13 +135,14 @@ def DFS(depth, max_depth, current_item_index, reference_task_tree, kitchen_items
                             flag = False
                             break
                 if flag:
-                    status = DFS(depth-1, max_depth, node_index, reference_task_tree, kitchen_items)
+                    #call DFS recursively for node
+                    DFS(depth-1, max_depth, node_index, reference_task_tree, kitchen_items)
                     if selected_candidate_idx in reference_task_tree:
                         pass
                     else:
                         reference_task_tree.append(selected_candidate_idx)
 
-    return False
+    return
 
 #In case of heuristic 1, if you have multiple path with different motions, choose the
 #path that gives higher success rate of executing the motion successfully. For
@@ -380,6 +377,9 @@ if __name__ == '__main__':
         node_object.states = node["states"]
         node_object.ingredients = node["ingredients"]
         node_object.container = node["container"]
+
+        if node_object.check_object_exist(foon_object_nodes) == -1:
+            print(f"The goal node {node_object.label} does not exist")
 
         for object in foon_object_nodes:
             if object.check_object_equal(node_object):
